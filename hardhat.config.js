@@ -17,10 +17,10 @@ module.exports = {
   defaultNetwork: 'localhost',
   networks: {
     hardhat: {
-      // forking: {
-      //   enabled: true,
-      //   url: "https://api.calibration.node.glif.io/rpc/v1",
-      // },
+      forking: {
+        enabled: true,
+        url: "https://blast-sepolia-testnet.rpc.thirdweb.com",
+    },
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
@@ -33,5 +33,10 @@ module.exports = {
       chainId: 314,
       url: "https://api.node.glif.io",
     },
+    blasttestnet: {
+      chainId: 168587773,
+      url: "https://blast-sepolia-testnet.rpc.thirdweb.com",
+      accounts: [""],
+    }
   },
 };
