@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -20,7 +21,7 @@ module.exports = {
       forking: {
         enabled: true,
         url: "https://blast-sepolia-testnet.rpc.thirdweb.com",
-    },
+      },
     },
     localhost: {
       url: 'http://127.0.0.1:8545',
@@ -36,7 +37,7 @@ module.exports = {
     blasttestnet: {
       chainId: 168587773,
       url: "https://blast-sepolia-testnet.rpc.thirdweb.com",
-      accounts: [""],
+      accounts: [process.env.PK],
     }
   },
 };
