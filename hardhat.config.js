@@ -15,7 +15,7 @@ module.exports = {
   paths: {
     sources: './contracts',
   },
-  defaultNetwork: 'localhost',
+  defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
       forking: {
