@@ -2,27 +2,29 @@
 
 pragma solidity 0.8.9;
 
+import "../market/CDPMarketPlace.sol";
 import "../tokens/CDP.sol";
+
+import "../interfaces/ICDPView.sol";
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-// import "hardhat/console.sol";
-
-contract CDPView is OwnableUpgradeable {
+contract CDPView is ICDPView, OwnableUpgradeable {
     // ETH-snUSDC
-    address public constant weth = 0x24457b0983B5D18Ed0e60bD7eAeB871c8072F275;
-    address public constant nsnUSDC =
-        0x4E0195cCE75159DC6aA9831D289e117d1f22B58F;
     address public constant snUSDC = 0xA5b277B48E5D1BB43F00d80C69D407997778927D;
     address public constant ethCDP = 0x585c82f7DAc53263800b59D276d573ef87Af8119;
 
     // USDC-snETH
-    address public constant usdc = 0x90a8Aa5cc323F9947c46c8F4b65c37FAaE0117F1;
-    address public constant nsnETH = 0x452F7F627c2718c5dE896B534CbB7DAE9B7414C3;
     address public constant snETH = 0xb2e3A0CFaf2f1d869d9d1f1cb7e1c810894e7285;
     address public constant usdcCDP =
         0xD57BD23eb22029abc78EF22E02E866f55827E744;
+
+    // CDP marketplace
+    address public constant cdpMarketplace =
+        0x04304Ec4dE0Df362F255A3e83c928a50f8c2EC90;
+
+    //============ Initialize ============//
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -33,20 +35,7 @@ contract CDPView is OwnableUpgradeable {
         __Ownable_init();
     }
 
-    struct CDPInfo {
-        address cdpAddress;
-        address collateralToken;
-        address debtToken;
-        string collateralSymbol;
-        string debtSymbol;
-        uint256 collateralAmount;
-        uint256 debtAmount;
-        uint256 collateralPrice;
-        uint256 debtPrice;
-        uint256 feeRatio;
-        uint256 globalLTV;
-        uint256 globalHealthFactor;
-    }
+    //============ View ============//
 
     function getCDPInfo() public view returns (CDPInfo[] memory) {
         CDPInfo[] memory cdpInfos = new CDPInfo[](2);
@@ -78,18 +67,6 @@ contract CDPView is OwnableUpgradeable {
         if (cdpInfo.collateralAmount != 0)
             cdpInfo.globalLTV = CDP(_cdpAddress).globalLTV();
         cdpInfo.globalHealthFactor = CDP(_cdpAddress).globalHealthFactor();
-    }
-
-    struct UserInfo {
-        address cdpAddress;
-        uint256 id;
-        bool isSafe;
-        uint256 currentLTV;
-        uint256 healthFactor;
-        uint256 collateral;
-        uint256 debt;
-        uint256 fee;
-        uint256 latestUpdate;
     }
 
     function getUserInfo(
@@ -139,5 +116,39 @@ contract CDPView is OwnableUpgradeable {
             }
         }
         return userInfos;
+    }
+
+    function getMarketInfo() external view returns (MarketInfo[] memory) {
+        uint256 totalId = CDPMarketPlace(cdpMarketplace).getTotalId();
+        uint256 count;
+        for (uint256 i = 0; i < totalId; i++) {
+            if (CDPMarketPlace(cdpMarketplace).getIsRegisteredIds(i)) count++;
+        }
+
+        MarketInfo[] memory marketInfos = new MarketInfo[](count);
+
+        count = 0;
+        for (uint256 i = 0; i < totalId; i++) {
+            if (CDPMarketPlace(cdpMarketplace).getIsRegisteredIds(i)) {
+                CDPMarketPlace.IdInfo memory idInfo = CDPMarketPlace(
+                    cdpMarketplace
+                ).getRegisteredIdInfo(i);
+                CDP.CollateralizedDebtPosition memory cdp = CDP(
+                    idInfo.cdpAddress
+                ).cdp(idInfo.id);
+                marketInfos[count].seller = idInfo.seller;
+                marketInfos[count].cdpAddress = idInfo.cdpAddress;
+                marketInfos[count].id = idInfo.id;
+                marketInfos[count].collateralToken = CDP(idInfo.cdpAddress)
+                    .collateralToken();
+                marketInfos[count].collateralAmount = cdp.collateral;
+                marketInfos[count].debtToken = CDP(idInfo.cdpAddress)
+                    .debtToken();
+                marketInfos[count].debtAmount = cdp.debt;
+                marketInfos[count].registeredAmount = idInfo.registeredAmount;
+                count++;
+            }
+        }
+        return marketInfos;
     }
 }
